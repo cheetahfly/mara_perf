@@ -33,45 +33,42 @@ class TrajectoryAnalyzer:
         """
         判断实际成绩是否显著偏离纵向轨迹规律。
 
-        逻辑：检查 step improvement 是否与历史 pattern 一致。
-        如果所有 step improvements 都接近（标准差小），说明是稳定趋势，
-        即使单个点偏离回归预测也不算异常。
-        如果 step improvements 差异巨大（有的很大有的很小），则是异常。
+        两种异常情况：
+        1. 步进高度不一致（step_std 很大）→ 训练不规律或数据问题
+        2. 当前值显著偏离线性趋势预测的置信区间
+
+        只有当步进一致且当前值在置信区间内，才算正常。
         """
         if len(self.times) < 2:
             return False
 
         # 计算所有 step improvements
-        steps = np.diff(self.times)  # e.g., [-300, -300] for [8400, 8100, 7800]
+        steps = np.diff(self.times)
+        step_std = float(np.std(steps))
+        mean_step = float(np.mean(steps))
 
-        # 如果只有1个 step，无法判断一致性
+        # 如果步进标准差很大（>200秒），说明提升不稳定，这是异常的
+        # 即使线性回归拟合得好，步进不一致本身就是一个信号
+        if step_std > 200:
+            return True
+
+        # 如果只有1个 step，使用置信区间判断
         if len(steps) == 1:
             predicted, (lower, upper) = self.predict_next(ci=ci)
             return not (lower <= actual_time <= upper)
 
-        # 计算 step improvements 的标准差
-        step_std = float(np.std(steps))
-
         # 当前 improvement = actual_time - 最后一个历史时间
         current_improvement = actual_time - int(self.times[-1])
-        mean_step = float(np.mean(steps))
 
         # 如果 step std 很小（稳定趋势），检查当前 improvement 是否偏离 mean_step
-        # 使用相对阈值：improvement_diff / |mean_step| > 1.5 表示显著偏离
         if step_std < 50:
             improvement_diff = abs(current_improvement - mean_step)
             if abs(mean_step) > 0:
                 ratio = improvement_diff / abs(mean_step)
                 return bool(ratio > 1.5)
             else:
-                # mean_step = 0 的情况（不应该发生）
                 return bool(improvement_diff > 50)
 
-        # step std 较大时，使用 z-score 判断
-        if step_std > 0:
-            z_score = abs(current_improvement - mean_step) / step_std
-        else:
-            z_score = 0.0 if current_improvement == mean_step else float('inf')
-
-        # z-score > 2 认为显著偏离
+        # step std 中等时，使用 z-score 判断
+        z_score = abs(current_improvement - mean_step) / step_std if step_std > 0 else 0.0
         return bool(z_score > 2.0)

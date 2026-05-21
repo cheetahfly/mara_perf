@@ -31,15 +31,26 @@ class AnomalyDetector:
                 self.target_times[-1]
             )
 
-        is_abnormal = (percentile < threshold) and is_longitudinal_anomaly
-
-        if is_abnormal:
+        # 判定逻辑：
+        # 1. 横向百分位极低（<0.5%）且纵向步进不一致 → 异常（幅度极端且不符合训练规律）
+        # 2. 横向百分位低（<5%）且纵向异常 → 异常
+        # 3. 横向百分位低但步进一致 → 正常突破（训练带来的真实提升）
+        # 4. 横向百分位不低 → 正常
+        extreme_threshold = 0.5
+        if percentile < extreme_threshold and is_longitudinal_anomaly:
+            is_abnormal = True
+            verdict = "异常"
+            details = f"横向百分位={percentile:.1f}%（<{extreme_threshold}%）且纵向轨迹异常"
+        elif percentile < threshold and is_longitudinal_anomaly:
+            is_abnormal = True
             verdict = "异常"
             details = f"横向百分位={percentile:.1f}%（<{threshold}%）且纵向轨迹异常"
         elif percentile < threshold:
+            is_abnormal = False
             verdict = "正常（训练突破）"
             details = f"横向罕见（{percentile:.1f}%），但纵向符合运动规律"
         else:
+            is_abnormal = False
             verdict = "正常"
             details = f"横向百分位={percentile:.1f}%，无异常迹象"
 
