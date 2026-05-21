@@ -16,8 +16,9 @@ class TestIntegration:
         for _ in range(100):
             baseline_times.append([8400, 8200, 8000])
 
-        # 2. 目标跑者：异常情况——从8400突然跳到7500
-        target_times = [8400, 7500, 7400]
+        # 2. 目标跑者：异常情况——第一步提升-900s，第二步提升-400s
+        # 基准每步只提升-200s，-400s 远小于基准，属于罕见值
+        target_times = [8400, 7500, 7100]
 
         # 3. 执行检测
         detector = AnomalyDetector(baseline_times, target_times)
