@@ -50,6 +50,14 @@ class Database:
                 FOREIGN KEY (runner_id) REFERENCES runners(id)
             )
         """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS scrape_state (
+                country TEXT PRIMARY KEY,
+                athletes_count INTEGER DEFAULT 0,
+                results_count INTEGER DEFAULT 0,
+                last_updated TEXT
+            )
+        """)
         conn.close()
         gc.collect()
 
@@ -106,3 +114,33 @@ class Database:
         conn.close()
         gc.collect()
         return result
+
+    def save_scrape_state(self, country: str, athletes_count: int, results_count: int):
+        """保存爬取状态"""
+        conn = sqlite3.connect(self.db_path, timeout=30, isolation_level=None)
+        conn.execute("""
+            INSERT OR REPLACE INTO scrape_state (country, athletes_count, results_count, last_updated)
+            VALUES (?, ?, ?, datetime('now'))
+        """, (country, athletes_count, results_count))
+        conn.close()
+        gc.collect()
+
+    def get_scrape_state(self, country: str) -> Optional[dict]:
+        """获取爬取状态"""
+        conn = sqlite3.connect(self.db_path, timeout=30, isolation_level=None)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.execute(
+            "SELECT * FROM scrape_state WHERE country = ?", (country,)
+        )
+        row = cursor.fetchone()
+        result = None
+        if row:
+            result = dict(row)
+        conn.close()
+        gc.collect()
+        return result
+
+    def is_country_done(self, country: str) -> bool:
+        """检查国家是否已爬取"""
+        state = self.get_scrape_state(country)
+        return state is not None and state["athletes_count"] > 0
