@@ -37,13 +37,14 @@ def main():
         sys.exit(1)
 
     times = [r.finish_time_seconds for r in results]
-    print(f"跑者成绩时间序列: {[r.finish_time_formatted for r in results]}")
+    from src.utils.time_converter import format_time
+    print(f"跑者成绩时间序列: {[format_time(r.finish_time_seconds) for r in results]}")
 
     from src.analysis.trajectory import TrajectoryAnalyzer
     analyzer = TrajectoryAnalyzer(times)
     predicted, (lower, upper) = analyzer.predict_next()
 
-    print(f"预测下一个成绩: {analyzer.times[-1]}s 置信区间: [{lower:.0f}, {upper:.0f}]")
+    print(f"预测下一个成绩: {predicted:.0f}s 置信区间: [{lower:.0f}, {upper:.0f}]")
 
     is_anomaly = analyzer.is_significant_deviation(times[-1])
     print(f"异常检测结果: {'异常' if is_anomaly else '正常'}")

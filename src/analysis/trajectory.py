@@ -16,7 +16,7 @@ class TrajectoryAnalyzer:
         coeffs = np.polyfit(x, y, 1)
         slope, intercept = coeffs
 
-        predicted = slope * self.n
+        predicted = slope * self.n + intercept
         residuals = y - np.polyval(coeffs, x)
         std_residuals = np.std(residuals)
 
