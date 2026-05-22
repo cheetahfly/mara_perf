@@ -17,7 +17,7 @@ COUNTRY_CODE_TO_NAME: Dict[str, str] = {
     "KEN": "Kenya", "ETH": "Ethiopia", "ERI": "Eritrea", "UGA": "Uganda",
     "TAN": "Tanzania", "MAR": "Morocco", "ALG": "Algeria", "TUN": "Tunisia",
     "EGY": "Egypt", "RSA": "South Africa", "NGR": "Nigeria", "GHA": "Ghana",
-    "CMR": "Cameroon", "CIV": "Ivory Coast", "SEN": "Senegal", "ETH": "Ethiopia",
+    "CMR": "Cameroon", "CIV": "Ivory Coast", "SEN": "Senegal",
     "JAM": "Jamaica", "BAH": "Bahamas", "TTO": "Trinidad and Tobago",
     "USA": "United States", "CAN": "Canada", "MEX": "Mexico",
     "BRA": "Brazil", "ARG": "Argentina", "PER": "Peru", "CHI": "Chile",
@@ -40,13 +40,13 @@ COUNTRY_CODE_TO_NAME: Dict[str, str] = {
     "QAT": "Qatar", "BRN": "Bahrain", "UAE": "United Arab Emirates",
     "KSA": "Saudi Arabia", "KUW": "Kuwait", "OMA": "Oman",
     "AUS": "Australia", "NZL": "New Zealand",
-    "ZIM": "Zimbabwe", "ZAM": "Zambia", "NGR": "Nigeria",
+    "ZIM": "Zimbabwe", "ZAM": "Zambia",
     "MDA": "Moldova", "GEO": "Georgia", "AZE": "Azerbaijan",
     "KAZ": "Kazakhstan", "UZB": "Uzbekistan", "TKM": "Turkmenistan",
     "KGZ": "Kyrgyzstan", "TJK": "Tajikistan",
-    "LTU": "Lithuania", "LUX": "Luxembourg", "MON": "Monaco",
+    "LUX": "Luxembourg", "MON": "Monaco",
     "PUR": "Puerto Rico", "CUB": "Cuba", "DOM": "Dominican Republic",
-    "NAM": "Namibia", "ETH": "Ethiopia",
+    "NAM": "Namibia",
 }
 
 GENDER_MAP = {"male": "M", "female": "F"}

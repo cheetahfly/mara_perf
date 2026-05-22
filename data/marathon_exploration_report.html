@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>马拉松数据探索报告</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --secondary: #64748b;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --text-secondary: #64748b;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+        .container { max-width: 1400px; margin: 0 auto; padding: 2rem; }
+        header {
+            background: linear-gradient(135deg, var(--primary), #1d4ed8);
+            color: white;
+            padding: 3rem 2rem;
+            border-radius: 1rem;
+            margin-bottom: 2rem;
+        }
+        header h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
+        header p { opacity: 0.9; font-size: 1.1rem; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; }
+        .card {
+            background: var(--card-bg);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .card h2 { font-size: 1.1rem; color: var(--text-secondary); margin-bottom: 1rem; border-bottom: 2px solid var(--primary); padding-bottom: 0.5rem; }
+        .stat { text-align: center; padding: 1rem 0; }
+        .stat-value { font-size: 2.5rem; font-weight: 700; color: var(--primary); }
+        .stat-label { color: var(--text-secondary); font-size: 0.9rem; }
+        .stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+        .stat-item { text-align: center; }
+        .stat-item .value { font-size: 1.5rem; font-weight: 600; color: var(--primary); }
+        .stat-item .label { font-size: 0.8rem; color: var(--text-secondary); }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        th, td { padding: 0.75rem; text-align: left; border-bottom: 1px solid #e2e8f0; }
+        th { background: #f1f5f9; font-weight: 600; }
+        tr:hover { background: #f8fafc; }
+        .chart-container { position: relative; height: 300px; margin-top: 1rem; }
+        .badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.8rem; }
+        .badge-success { background: #d1fae5; color: #065f46; }
+        .badge-warning { background: #fef3c7; color: #92400e; }
+        .badge-danger { background: #fee2e2; color: #991b1b; }
+        .progress-bar { height: 24px; background: #e2e8f0; border-radius: 4px; overflow: hidden; margin: 0.25rem 0; }
+        .progress-fill { height: 100%; background: var(--primary); transition: width 0.3s; }
+        footer { text-align: center; padding: 2rem; color: var(--text-secondary); font-size: 0.9rem; }
+        .section { margin-bottom: 2rem; }
+        .section-title { font-size: 1.5rem; margin: 2rem 0 1rem; color: var(--text); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏃 马拉松数据探索报告</h1>
+            <p>基于统一去重数据库的全面数据分析 | 生成时间: 2026-05-22 10:37</p>
+        </header>
+
+        <div class="grid">
+            <div class="card">
+                <h2>📊 核心指标</h2>
+                <div class="stat">
+                    <div class="stat-value">443,098</div>
+                    <div class="stat-label">运动员总数</div>
+                </div>
+                <div class="stat-grid">
+                    <div class="stat-item">
+                        <div class="value">698,431</div>
+                        <div class="label">成绩记录</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="value">98,767</div>
+                        <div class="label">多次完赛运动员</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>👥 性别分布</h2>
+                <div class="stat-grid">
+                    <div class="stat-item">
+                        <div class="value">441,651</div>
+                        <div class="label">男性</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="value">1,447</div>
+                        <div class="label">女性</div>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="genderChart"></canvas>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>📁 数据来源</h2>
+                <div class="stat-grid">
+                    <div class="stat-item">
+                        <div class="value">678,568</div>
+                        <div class="label">7城市马拉松</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="value">19,863</div>
+                        <div class="label">World Athletics</div>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="sourceChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">⏱️ 成绩分布</h2>
+            <div class="grid">
+                <div class="card">
+                    <h2>完赛时间分布 (全马 3:00-6:00)</h2>
+                    <div class="chart-container">
+                        <canvas id="timeDistChart"></canvas>
+                    </div>
+                </div>
+                <div class="card">
+                    <h2>年度完赛趋势</h2>
+                    <div class="chart-container">
+                        <canvas id="yearTrendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">🏅 最快成绩 TOP 20</h2>
+            <div class="card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>排名</th>
+                            <th>姓名</th>
+                            <th>成绩</th>
+                            <th>赛事</th>
+                            <th>性别</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1</td>
+                            <td><strong>BERNARD KIMANI</strong></td>
+                            <td><span class="badge badge-success">1:00:00</span></td>
+                            <td>Den Haag (NED)</td>
+                            <td>M</td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td><strong>BONIFACE KIBIWOTT</strong></td>
+                            <td><span class="badge badge-success">1:00:00</span></td>
+                            <td>København (DEN)</td>
+                            <td>M</td>
+                        </tr>
+                        <tr>
+                            <td>3</td>
+                            <td><strong>CALLUM HAWKINS</strong></td>
+                            <td><span class="badge badge-success">1:00:00</span></td>
+                            <td>Marugame (JPN)</td>
+                            <td>M</td>
+                        </tr>
+                        <tr>
+                            <td>4</td>
+                            <td><strong>DATHAN RITZENHEIN</strong></td>
+                            <td><span class="badge badge-success">1:00:00</span></td>
+                            <td>Birmingham (GBR)</td>
+                            <td>M</td>
+                        </tr>
+                        <tr>
+                            <td>5</td>
+                            <td><strong>DEREJE HAILEGIORGIS</strong></td>
+                            <td><span class="badge badge-success">1:00:00</span></td>
+                            <td>Verbania (ITA)</td>
+                            <td>M</td>
+                        </tr>
+                        <tr>
+                            <td>6</td>
+                            <td><strong>KENNETH CHERUIYOT</strong></td>
+                            <td><span class="badge badge-success">1:00:00</span></td>
+                            <td>Košice (SVK)</td>
+                            <td>M</td>
+                        </tr>
+                        <tr>
+                            <td>7</td>
+                            <td><strong>MOSES KOECH</strong></td>
+                            <td><span class="badge badge-success">1:00:00</span></td>
+                            <td>Barcelona (ESP)</td>
+                            <td>M</td>
+                        </tr>
+                        <tr>
+                            <td>8</td>
+                            <td><strong>NGUSE AMLOSOM</strong></td>
+                            <td><span class="badge badge-success">1:00:00</span></td>
+                            <td>København (DEN)</td>
+                            <td>M</td>
+                        </tr>
+                        <tr>
+                            <td>9</td>
+                            <td><strong>PATRICK MAKAU MUSYOKI</strong></td>
+                            <td><span class="badge badge-success">1:00:00</span></td>
+                            <td>Berlin (GER)</td>
+                            <td>M</td>
+                        </tr>
+                        <tr>
+                            <td>10</td>
+                            <td><strong>PHILIP KIPSANG RUGUT</strong></td>
+                            <td><span class="badge badge-success">1:00:00</span></td>
+                            <td>Malmö (SWE)</td>
+                            <td>M</td>
+                        </tr>
+                        <tr>
+                            <td>11</td>
+                            <td><strong>PRECIOUS LESIBA MASHELE</strong></td>
+                            <td><span class="badge badge-success">1:00:00</span></td>
+                            <td>Poznan (POL)</td>
+                            <td>M</td>
+                        </tr>
+                        <tr>
+                            <td>12</td>
+                            <td><strong>RAYMOND MAGUT</strong></td>
+                            <td><span class="badge badge-success">1:00:00</span></td>
+                            <td>Herzogenaurach (GER)</td>
+                            <td>M</td>
+                        </tr>
+                        <tr>
+                            <td>13</td>
+                            <td><strong>SOLOMON BERIHU</strong></td>
+                            <td><span class="badge badge-success">1:00:00</span></td>
+                            <td>Lisboa (POR)</td>
+                            <td>M</td>
+                        </tr>
+                        <tr>
+                            <td>14</td>
+                            <td><strong>STEPHEN KISSA</strong></td>
+                            <td><span class="badge badge-success">1:00:00</span></td>
+                            <td>Barcelona (ESP)</td>
+                            <td>M</td>
+                        </tr>
+                        <tr>
+                            <td>15</td>
+                            <td><strong>TITUS KWEMOI MASAI</strong></td>
+                            <td><span class="badge badge-success">1:00:00</span></td>
+                            <td>Nice (FRA)</td>
+                            <td>M</td>
+                        </tr>
+                        <tr>
+                            <td>16</td>
+                            <td><strong>VINCENT KIPKEMOI NGETICH</strong></td>
+                            <td><span class="badge badge-success">1:00:00</span></td>
+                            <td>Málaga (ESP)</td>
+                            <td>M</td>
+                        </tr>
+                        <tr>
+                            <td>17</td>
+                            <td><strong>YUSUKE OGURA</strong></td>
+                            <td><span class="badge badge-success">1:00:00</span></td>
+                            <td>Marugame (JPN)</td>
+                            <td>M</td>
+                        </tr>
+                        <tr>
+                            <td>18</td>
+                            <td><strong>ANDAMLAK BELIHU</strong></td>
+                            <td><span class="badge badge-success">1:00:01</span></td>
+                            <td>Ras Al Khaimah (UAE)</td>
+                            <td>M</td>
+                        </tr>
+                        <tr>
+                            <td>19</td>
+                            <td><strong>ASEFA MENGSTU</strong></td>
+                            <td><span class="badge badge-success">1:00:01</span></td>
+                            <td>København (DEN)</td>
+                            <td>M</td>
+                        </tr>
+                        <tr>
+                            <td>20</td>
+                            <td><strong>AUGUSTINE KIPRONO CHOGE</strong></td>
+                            <td><span class="badge badge-success">1:00:01</span></td>
+                            <td>New Delhi (IND)</td>
+                            <td>M</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">🏙️ 赛事分布 (Top 15)</h2>
+            <div class="card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>排名</th>
+                            <th>赛事</th>
+                            <th>完赛人数</th>
+                            <th>占比</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1</td>
+                            <td>Berlin (2019)</td>
+                            <td>43,933</td>
+                            <td>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 6.3%"></div>
+                                </div>
+                                6.3%
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td>Berlin (2018)</td>
+                            <td>40,638</td>
+                            <td>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 5.8%"></div>
+                                </div>
+                                5.8%
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>3</td>
+                            <td>Berlin (2017)</td>
+                            <td>39,213</td>
+                            <td>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 5.6%"></div>
+                                </div>
+                                5.6%
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>4</td>
+                            <td>Berlin (2015)</td>
+                            <td>36,750</td>
+                            <td>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 5.3%"></div>
+                                </div>
+                                5.3%
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>5</td>
+                            <td>Berlin (2013)</td>
+                            <td>36,468</td>
+                            <td>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 5.2%"></div>
+                                </div>
+                                5.2%
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>6</td>
+                            <td>Berlin (2016)</td>
+                            <td>35,984</td>
+                            <td>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 5.2%"></div>
+                                </div>
+                                5.2%
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>7</td>
+                            <td>Berlin (2008)</td>
+                            <td>35,712</td>
+                            <td>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 5.1%"></div>
+                                </div>
+                                5.1%
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>8</td>
+                            <td>Berlin (2009)</td>
+                            <td>34,999</td>
+                            <td>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 5.0%"></div>
+                                </div>
+                                5.0%
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>9</td>
+                            <td>Berlin (2012)</td>
+                            <td>34,265</td>
+                            <td>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 4.9%"></div>
+                                </div>
+                                4.9%
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>10</td>
+                            <td>Berlin (2010)</td>
+                            <td>33,996</td>
+                            <td>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 4.9%"></div>
+                                </div>
+                                4.9%
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>11</td>
+                            <td>Berlin (2011)</td>
+                            <td>32,907</td>
+                            <td>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 4.7%"></div>
+                                </div>
+                                4.7%
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>12</td>
+                            <td>Berlin (2007)</td>
+                            <td>32,471</td>
+                            <td>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 4.6%"></div>
+                                </div>
+                                4.6%
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>13</td>
+                            <td>Berlin (2003)</td>
+                            <td>30,704</td>
+                            <td>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 4.4%"></div>
+                                </div>
+                                4.4%
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>14</td>
+                            <td>Berlin (2005)</td>
+                            <td>30,370</td>
+                            <td>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 4.3%"></div>
+                                </div>
+                                4.3%
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>15</td>
+                            <td>Berlin (2006)</td>
+                            <td>30,175</td>
+                            <td>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 4.3%"></div>
+                                </div>
+                                4.3%
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">📈 运动员完赛次数分布</h2>
+            <div class="grid">
+                <div class="card">
+                    <h2>完赛次数统计</h2>
+                    <div class="chart-container">
+                        <canvas id="recordsPerRunnerChart"></canvas>
+                    </div>
+                </div>
+                <div class="card">
+                    <h2>出生年分布</h2>
+                    <div class="chart-container">
+                        <canvas id="birthYearChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>马拉松数据探索报告 | 数据来源: World Athletics + 7城市马拉松数据</p>
+            <p>生成时间: 2026-05-22 10:37:26</p>
+        </footer>
+    </div>
+
+    <script>
+        // 性别分布饼图
+        new Chart(document.getElementById('genderChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['男性', '女性'],
+                datasets: [{
+                    data: [441651, 1447],
+                    backgroundColor: ['#2563eb', '#ec4899']
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+
+        // 数据来源饼图
+        new Chart(document.getElementById('sourceChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['7城市马拉松', 'World Athletics'],
+                datasets: [{
+                    data: [678568, 19863],
+                    backgroundColor: ['#10b981', '#f59e0b']
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+
+        // 成绩分布柱状图
+        new Chart(document.getElementById('timeDistChart'), {
+            type: 'bar',
+            data: {
+                labels: ["Sub 2:00", "2:00-2:10", "2:10-2:20", "2:20-2:30", "2:30-2:45", "2:45-3:00", "3:00-3:15", "3:15-3:30", "3:30-4:00", "4:00+"],
+                datasets: [{
+                    label: '人数',
+                    data: [6416, 4115, 5101, 5265, 5741, 21274, 34754, 63108, 191551, 352493],
+                    backgroundColor: '#2563eb'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } }
+            }
+        });
+
+        // 年度趋势图
+        new Chart(document.getElementById('yearTrendChart'), {
+            type: 'line',
+            data: {
+                labels: ["1999", "2000", "2001", "2002", "2003", "2004", "2005", "2006", "2007", "2008", "2009", "2010", "2011", "2012", "2013", "2014", "2015", "2016", "2017", "2018", "2019"],
+                datasets: [{
+                    label: '完赛人次',
+                    data: [19128, 22871, 25772, 25281, 30704, 28001, 30370, 30175, 32471, 35712, 34999, 33996, 32907, 34265, 36468, 28930, 36750, 35984, 39213, 40638, 43933],
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { y: { beginAtZero: false } }
+            }
+        });
+
+        // 完赛次数分布
+        new Chart(document.getElementById('recordsPerRunnerChart'), {
+            type: 'bar',
+            data: {
+                labels: ["1\u6b21", "2\u6b21", "3\u6b21", "4\u6b21", "5\u6b21", "6\u6b21", "7\u6b21", "8\u6b21", "9\u6b21", "10\u6b21", "11\u6b21", "12\u6b21", "13\u6b21", "14\u6b21", "15\u6b21"],
+                datasets: [{
+                    label: '运动员数',
+                    data: [344331, 52325, 18684, 8906, 5243, 3288, 2315, 1636, 1200, 1133, 868, 644, 506, 418, 313],
+                    backgroundColor: '#8b5cf6'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } }
+            }
+        });
+
+        // 出生年分布
+        new Chart(document.getElementById('birthYearChart'), {
+            type: 'line',
+            data: {
+                labels: ["1941", "1942", "1943", "1944", "1945", "1946", "1947", "1948", "1949", "1950", "1951", "1952", "1953", "1954", "1955", "1956", "1957", "1958", "1959", "1960", "1961", "1962", "1963", "1964", "1965", "1966", "1967", "1968", "1969", "1970", "1971", "1972", "1973", "1974", "1975", "1976", "1977", "1978", "1979", "1980", "1981", "1982", "1983", "1984", "1985", "1986", "1987", "1988", "1989", "1990", "1991", "1992", "1993", "1994", "1995", "1996", "1997", "1998", "1999", "2000", "2001", "2002", "2003", "2004", "2005"],
+                datasets: [{
+                    label: '运动员数',
+                    data: [1, 2, 2, 2, 4, 2, 3, 5, 9, 8, 11, 14, 16, 21, 28, 24, 23, 30, 22, 37, 37, 46, 30, 43, 41, 45, 42, 59, 67, 64, 62, 83, 81, 90, 61, 94, 85, 98, 79, 94, 87, 116, 104, 146, 135, 160, 145, 163, 128, 180, 140, 153, 177, 163, 147, 150, 121, 120, 80, 59, 32, 14, 12, 5, 1],
+                    borderColor: '#f59e0b',
+                    backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+    </script>
+</body>
+</html>
